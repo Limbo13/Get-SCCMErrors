@@ -1,5 +1,20 @@
-$NumElapsedHours = 24
+#Create excel COM object
+$excel = New-Object -ComObject excel.application
+
+#Make Visible
+$excel.Visible = $True
+
+#Add a workbook
+$workbook = $excel.Workbooks.Add()
+
+#Connect to first worksheet to rename and make active
+$serverInfoSheet = $workbook.Worksheets.Item(1)
+$serverInfoSheet.Name = 'WarningsAndErrors'
+$serverInfoSheet.Activate() | Out-Null
+
+$NumElapsedHours = 72
 $LogFiles = Get-ChildItem C:\Windows\CCM\Logs
+$RowNum = 1
 
 foreach ($LogFile in $LogFiles)
 {
@@ -62,14 +77,30 @@ foreach ($LogFile in $LogFiles)
                         If ($Line -like "*Error*")
                         {
                             #Write-Host $Line -ForegroundColor "red"
+                            $serverInfoSheet.Cells.Item($RowNum,1)= $LogFile.Name
+                            $serverInfoSheet.Cells.Item($RowNum,2)= $Line
+                            $serverInfoSheet.Cells.Item($RowNum,2).font.colorindex = 3
                         }
                         elseif ($Line -like "*Failed*")
                         {
-                            Write-Host $Line -ForegroundColor "Yellow"
+                            #Write-Host $Line -ForegroundColor "Yellow"
+                            $serverInfoSheet.Cells.Item($RowNum,1)= $LogFile.Name
+                            $serverInfoSheet.Cells.Item($RowNum,2)= $Line
+                            $serverInfoSheet.Cells.Item($RowNum,2).font.colorindex = 12
                         }
+                        $RowNum++
                     }
                 }
             }
         }
     }
 }
+
+#Save the file
+$workbook.SaveAs("C:\temp\SCCMErrors.xlsx")
+
+#Quit the application
+$excel.Quit()
+
+#Release COM Object
+[System.Runtime.InteropServices.Marshal]::ReleaseComObject([System.__ComObject]$excel) | Out-Null
